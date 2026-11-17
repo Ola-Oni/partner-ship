@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DuoTrack - Goal & Accountability Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- Top Header Bar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🎯</span>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">DuoTrack</h1>
+                <span class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-1 rounded-full border border-indigo-100">Light Edition</span>
+            </div>
+
+            <!-- Active Period & Controls -->
+            <div class="flex items-center flex-wrap gap-2 text-xs">
+                <div class="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-2">
+                    <span class="text-slate-500 font-medium">Day:</span> <strong id="lblDay" class="text-slate-800">2026-11-17</strong>
+                    <span class="text-slate-300">|</span>
+                    <span class="text-slate-500 font-medium">Week:</span> <strong id="lblWeek" class="text-slate-800">2026-W47</strong>
+                    <span class="text-slate-300">|</span>
+                    <span class="text-slate-500 font-medium">Month:</span> <strong id="lblMonth" class="text-slate-800">2026-11</strong>
+                </div>
+
+                <button onclick="openGoalManager()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-3 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5">
+                    ⚙️ Manage Goals & Names
+                </button>
+                <button onclick="testRollover()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-3 py-1.5 rounded-lg transition">
+                    Test Rollover ⏭️
+                </button>
+                <button onclick="openGitHubModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-medium px-3 py-1.5 rounded-lg transition shadow-sm">
+                    GitHub JSON 📂
+                </button>
+                <button onclick="resetDemoData()" class="text-rose-600 hover:bg-rose-50 px-2 py-1.5 rounded-lg transition font-medium">
+                    Reset
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Head-to-Head Comparison Strip -->
+    <section class="max-w-6xl mx-auto px-4 mt-6 w-full">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Head-to-Head Comparison</h2>
+                <span id="championBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">👑 Tied</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Person 1 Summary Card -->
+                <div onclick="switchTab('person1')" class="cursor-pointer bg-slate-50 hover:bg-indigo-50/40 border border-slate-200 rounded-xl p-3.5 transition flex items-center justify-between">
+                    <div>
+                        <span id="summaryName1" class="font-bold text-slate-900 text-base">Alex</span>
+                        <div class="text-xs text-slate-500 mt-0.5 flex gap-3">
+                            <span>High: <strong id="sumHigh1" class="text-emerald-600">--%</strong></span>
+                            <span>Worst: <strong id="sumWorst1" class="text-rose-600">--%</strong></span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span id="sumPace1" class="text-2xl font-black text-indigo-600">0%</span>
+                        <span class="block text-[10px] text-slate-400 uppercase tracking-wide">Live Pace</span>
+                    </div>
+                </div>
+                <!-- Person 2 Summary Card -->
+                <div onclick="switchTab('person2')" class="cursor-pointer bg-slate-50 hover:bg-indigo-50/40 border border-slate-200 rounded-xl p-3.5 transition flex items-center justify-between">
+                    <div>
+                        <span id="summaryName2" class="font-bold text-slate-900 text-base">Jordan</span>
+                        <div class="text-xs text-slate-500 mt-0.5 flex gap-3">
+                            <span>High: <strong id="sumHigh2" class="text-emerald-600">--%</strong></span>
+                            <span>Worst: <strong id="sumWorst2" class="text-rose-600">--%</strong></span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span id="sumPace2" class="text-2xl font-black text-indigo-600">0%</span>
+                        <span class="block text-[10px] text-slate-400 uppercase tracking-wide">Live Pace</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Workspace -->
+    <main class="max-w-6xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+        
+        <!-- Person Tabs Navigation -->
+        <div class="flex border-b border-slate-200 gap-8">
+            <button onclick="switchTab('person1')" id="tabBtn1" class="pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition flex items-center gap-2">
+                <span id="tabName1">Alex</span>
+                <span id="badgeCount1" class="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full">0 penalties</span>
+            </button>
+            <button onclick="switchTab('person2')" id="tabBtn2" class="pb-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center gap-2">
+                <span id="tabName2">Jordan</span>
+                <span id="badgeCount2" class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full">0 penalties</span>
+            </button>
+        </div>
+
+        <!-- Tab Content Containers -->
+        <div id="tabContent1" class="space-y-6">
+            <!-- Rendered dynamically by JS -->
+        </div>
+        <div id="tabContent2" class="space-y-6 hidden">
+            <!-- Rendered dynamically by JS -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        DuoTrack &bull; Automatic Daily, Weekly & Monthly Rollover with GitHub JSON Backup
+    </footer>
+
+    <!-- Goal & Name Manager Modal -->
+    <div id="goalManagerModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-5">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-900">Manage Goals & Names</h3>
+                <button onclick="closeGoalManager()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+            </div>
+            
+            <!-- Sub Tabs -->
+            <div class="flex border-b text-sm font-medium">
+                <button onclick="switchManagerTab('goals')" id="mgrTabGoals" class="pb-2 px-4 border-b-2 border-indigo-600 text-indigo-600">Customize Goals</button>
+                <button onclick="switchManagerTab('names')" id="mgrTabNames" class="pb-2 px-4 border-b-2 border-transparent text-slate-500">Participant Names</button>
+            </div>
+
+            <!-- Goals Pane -->
+            <div id="mgrPaneGoals" class="space-y-4">
+                <div class="flex gap-2">
+                    <select id="gmPerson" onchange="renderGoalManagerList()" class="flex-1 border rounded-lg p-2 text-sm bg-slate-50">
+                        <option value="person1" id="optName1">Alex</option>
+                        <option value="person2" id="optName2">Jordan</option>
+                    </select>
+                    <select id="gmTimeframe" onchange="renderGoalManagerList()" class="flex-1 border rounded-lg p-2 text-sm bg-slate-50">
+                        <option value="daily">Daily Goals</option>
+                        <option value="weekly">Weekly Goals</option>
+                        <option value="monthly">Monthly Goals</option>
+                    </select>
+                </div>
+
+                <div id="gmGoalList" class="space-y-2 max-h-52 overflow-y-auto border p-2 rounded-lg bg-slate-50">
+                    <!-- Dynamic goals -->
+                </div>
+
+                <div class="flex gap-2 pt-1">
+                    <input type="text" id="newGoalInput" placeholder="Add new goal..." class="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button onclick="addNewGoalFromModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Add</button>
+                </div>
+            </div>
+
+            <!-- Names Pane -->
+            <div id="mgrPaneNames" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Participant 1 Name:</label>
+                    <input type="text" id="inputName1" class="w-full border rounded-lg px-3 py-2 text-sm bg-slate-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Participant 2 Name:</label>
+                    <input type="text" id="inputName2" class="w-full border rounded-lg px-3 py-2 text-sm bg-slate-50">
+                </div>
+                <button onclick="saveNamesFromModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-sm font-medium transition">Update Names</button>
+            </div>
+
+            <div class="flex justify-end pt-3 border-t">
+                <button onclick="closeGoalManager()" class="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition">Save & Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GitHub Sync Modal -->
+    <div id="githubModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-900">GitHub JSON Sync</h3>
+                <button onclick="closeGitHubModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+            </div>
+            <p class="text-xs text-slate-500">
+                Download your <code>data.json</code> file to commit to your GitHub repository, or paste updated JSON below to load it.
+            </p>
+            <textarea id="jsonTextArea" class="w-full h-40 border rounded-xl p-3 font-mono text-xs bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            <div class="flex flex-wrap justify-between gap-2 pt-2 border-t">
+                <button onclick="downloadJsonFile()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Download data.json</button>
+                <div class="flex gap-2">
+                    <button onclick="loadJsonFromTextarea()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Import JSON</button>
+                    <button onclick="closeGitHubModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Logic -->
+    <script>
+        // Default Initial App Data Structure
+        const defaultData = {
+            activeDate: "2026-11-17",
+            activeWeek: "2026-W47",
+            activeMonth: "2026-11",
+            person1: {
+                name: "Alex",
+                monthHigh: null,
+                monthWorst: null,
+                daily: [
+                    { text: "Gym workout (45m+)", done: false },
+                    { text: "Read 20 pages", done: false },
+                    { text: "No sugary drinks", done: false }
+                ],
+                weekly: [
+                    { text: "Review weekly budget", done: false },
+                    { text: "Complete coding sprint", done: false }
+                ],
+                monthly: [
+                    { text: "Ship feature release", done: false }
+                ],
+                punishments: {
+                    dailyText: "Do 50 pushups",
+                    weeklyText: "Cook dinner for the week",
+                    monthlyText: "Buy groceries for both"
+                },
+                ledger: []
+            },
+            person2: {
+                name: "Jordan",
+                monthHigh: null,
+                monthWorst: null,
+                daily: [
+                    { text: "Morning run (3km)", done: false },
+                    { text: "Code for 2 hours", done: false },
+                    { text: "Meditate 10 mins", done: false }
+                ],
+                weekly: [
+                    { text: "Clean workspace", done: false },
+                    { text: "Plan weekly meals", done: false }
+                ],
+                monthly: [
+                    { text: "Review investments", done: false }
+                ],
+                punishments: {
+                    dailyText: "Wash all dishes",
+                    weeklyText: "Clean the entire living room",
+                    monthlyText: "Organize weekend trip",
+                },
+                ledger: []
+            }
+        };
+
+        let appData = JSON.parse(localStorage.getItem('duotrack_data')) || defaultData;
+        let activeTab = 'person1';
+
+        function saveData() {
+            localStorage.setItem('duotrack_data', JSON.stringify(appData));
+        }
+
+        // Automatic Rollover Engine on Load
+        function checkRolloverOnLoad() {
+            const today = new Date().toISOString().split('T')[0];
+            if (appData.activeDate !== today) {
+                evaluateAndRollPeriod(today);
+            }
+            renderApp();
+        }
+
+        function evaluateAndRollPeriod(newDateStr) {
+            ['person1', 'person2'].forEach(pKey => {
+                const p = appData[pKey];
+                
+                // Evaluate Daily Completion
+                const dailyTotal = p.daily.length;
+                const dailyDone = p.daily.filter(g => g.done).length;
+                const dailyPct = dailyTotal > 0 ? Math.round((dailyDone / dailyTotal) * 100) : 100;
+
+                // Update High/Worst
+                if (p.monthHigh === null || dailyPct > p.monthHigh) p.monthHigh = dailyPct;
+                if (p.monthWorst === null || dailyPct < p.monthWorst) p.monthWorst = dailyPct;
+
+                // Check Daily Punishment (<60%)
+                if (dailyPct < 60 && dailyTotal > 0) {
+                    p.ledger.unshift({
+                        id: Date.now() + Math.random(),
+                        period: 'Daily (' + appData.activeDate + ')',
+                        text: p.punishments.dailyText,
+                        score: dailyPct + '%',
+                        completed: false
+                    });
+                }
+
+                // Reset Daily checkboxes for new day
+                p.daily.forEach(g => g.done = false);
+            });
+
+            appData.activeDate = newDateStr;
+            // Handle ISO Week or Month changes if necessary
+            saveData();
+        }
+
+        function testRollover() {
+            const curr = new Date(appData.activeDate);
+            curr.setDate(curr.getDate() + 1);
+            const nextDay = curr.toISOString().split('T')[0];
+            evaluateAndRollPeriod(nextDay);
+            alert("Simulated day rollover to " + nextDay + "!");
+        }
+
+        // Render Application UI
+        function renderApp() {
+            // Header Dates
+            document.getElementById('lblDay').innerText = appData.activeDate;
+            document.getElementById('lblWeek').innerText = appData.activeWeek;
+            document.getElementById('lblMonth').innerText = appData.activeMonth;
+
+            // Names & Tabs
+            document.getElementById('tabName1').innerText = appData.person1.name;
+            document.getElementById('tabName2').innerText = appData.person2.name;
+            document.getElementById('summaryName1').innerText = appData.person1.name;
+            document.getElementById('summaryName2').innerText = appData.person2.name;
+            document.getElementById('optName1').innerText = appData.person1.name;
+            document.getElementById('optName2').innerText = appData.person2.name;
+
+            // Compute Pace
+            const pace1 = getCompletionRate(appData.person1);
+            const pace2 = getCompletionRate(appData.person2);
+
+            document.getElementById('sumPace1').innerText = pace1 + '%';
+            document.getElementById('sumPace2').innerText = pace2 + '%';
+
+            document.getElementById('sumHigh1').innerText = appData.person1.monthHigh !== null ? appData.person1.monthHigh + '%' : '--%';
+            document.getElementById('sumWorst1').innerText = appData.person1.monthWorst !== null ? appData.person1.monthWorst + '%' : '--%';
+
+            document.getElementById('sumHigh2').innerText = appData.person2.monthHigh !== null ? appData.person2.monthHigh + '%' : '--%';
+            document.getElementById('sumWorst2').innerText = appData.person2.monthWorst !== null ? appData.person2.monthWorst + '%' : '--%';
+
+            // Pending Penalties Badges
+            const pend1 = appData.person1.ledger.filter(l => !l.completed).length;
+            const pend2 = appData.person2.ledger.filter(l => !l.completed).length;
+            document.getElementById('badgeCount1').innerText = pend1 + ' penalties';
+            document.getElementById('badgeCount2').innerText = pend2 + ' penalties';
+
+            // Champion Crown Badge
+            const champBadge = document.getElementById('championBadge');
+            if (pace1 > pace2) {
+                champBadge.innerHTML = `👑 ${appData.person1.name} Leading`;
+                champBadge.className = "text-xs font-bold px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1";
+            } else if (pace2 > pace1) {
+                champBadge.innerHTML = `👑 ${appData.person2.name} Leading`;
+                champBadge.className = "text-xs font-bold px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1";
+            } else {
+                champBadge.innerHTML = `👑 Tied`;
+                champBadge.className = "text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1";
+            }
+
+            // Render Person Tab Panes
+            renderPersonPane('person1', appData.person1, 'tabContent1');
+            renderPersonPane('person2', appData.person2, 'tabContent2');
+        }
+
+        function getCompletionRate(p) {
+            const allGoals = [...p.daily, ...p.weekly, ...p.monthly];
+            if (allGoals.length === 0) return 0;
+            const doneCount = allGoals.filter(g => g.done).length;
+            return Math.round((doneCount / allGoals.length) * 100);
+        }
+
+        function renderPersonPane(key, p, containerId) {
+            const container = document.getElementById(containerId);
+            const rate = getCompletionRate(p);
+
+            container.innerHTML = `
+                <!-- Progress & Stats Banner -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900">${p.name}'s Tracker</h3>
+                            <p class="text-xs text-slate-500">Complete goals across daily, weekly, and monthly targets.</p>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <div class="text-center">
+                                <span class="block text-xs font-medium text-slate-400 uppercase">Month High</span>
+                                <span class="text-lg font-bold text-emerald-600">${p.monthHigh !== null ? p.monthHigh + '%' : '--%'}</span>
+                            </div>
+                            <div class="text-center">
+                                <span class="block text-xs font-medium text-slate-400 uppercase">Month Worst</span>
+                                <span class="text-lg font-bold text-rose-600">${p.monthWorst !== null ? p.monthWorst + '%' : '--%'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-semibold mb-1 text-slate-600">
+                            <span>Overall Completion Pace</span>
+                            <span>${rate}%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden relative border border-slate-200">
+                            <div class="bg-indigo-600 h-full transition-all duration-300" style="width: ${rate}%"></div>
+                            <div class="absolute top-0 bottom-0 left-[60%] w-0.5 bg-rose-500 z-10" title="60% Threshold Marker"></div>
+                        </div>
+                        <span class="text-[10px] text-rose-600 font-medium mt-1 block">Red line indicates 60% threshold (< 60% triggers punishment)</span>
+                    </div>
+                </div>
+
+                <!-- 3 Checklists Columns -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    ${renderChecklistCard(key, 'daily', 'Daily Goals', p.daily, p.punishments.dailyText)}
+                    ${renderChecklistCard(key, 'weekly', 'Weekly Goals', p.weekly, p.punishments.weeklyText)}
+                    ${renderChecklistCard(key, 'monthly', 'Monthly Goals', p.monthly, p.punishments.monthlyText)}
+                </div>
+
+                <!-- Punishments Ledger -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center border-b pb-3">
+                        <h4 class="font-bold text-slate-900 text-sm">Active Punishments Ledger (< 60% Penalties)</h4>
+                        <span class="text-xs bg-rose-50 text-rose-700 font-semibold px-2.5 py-1 rounded-full border border-rose-100">
+                            ${p.ledger.filter(l => !l.completed).length} Pending
+                        </span>
+                    </div>
+                    <div class="space-y-2 max-h-56 overflow-y-auto">
+                        ${p.ledger.length === 0 ? '<p class="text-xs text-slate-400 text-center py-4">No punishments recorded yet. Keep up the good work!</p>' : ''}
+                        ${p.ledger.map(item => `
+                            <div class="flex items-center justify-between p-3 rounded-xl border ${item.completed ? 'bg-slate-50 border-slate-200 opacity-60' : 'bg-rose-50/40 border-rose-200'}">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-200 text-slate-700">${item.period}</span>
+                                        <span class="text-xs font-bold text-rose-600">Score: ${item.score}</span>
+                                    </div>
+                                    <p class="text-sm font-medium text-slate-800 mt-1 ${item.completed ? 'line-through' : ''}">${item.text}</p>
+                                </div>
+                                <button onclick="toggleLedgerItem('${key}', ${item.id})" class="px-3 py-1.5 rounded-lg text-xs font-medium transition ${item.completed ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-rose-600 hover:bg-rose-700 text-white shadow-sm'}">
+                                    ${item.completed ? 'Completed' : 'Mark Done'}
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderChecklistCard(personKey, timeframe, title, goals, punishmentText) {
+            const total = goals.length;
+            const done = goals.filter(g => g.done).length;
+            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+            const isDanger = pct < 60 && total > 0;
+
+            return `
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-bold text-slate-900 text-sm">${title}</h4>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full ${isDanger ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700'}">${done}/${total}</span>
+                        </div>
+                        <div class="space-y-2 mb-4">
+                            ${goals.length === 0 ? '<p class="text-xs text-slate-400 italic">No goals added yet.</p>' : ''}
+                            ${goals.map((g, idx) => `
+                                <label class="flex items-start gap-2.5 cursor-pointer p-2 rounded-lg hover:bg-slate-50 transition border border-transparent hover:border-slate-200">
+                                    <input type="checkbox" ${g.done ? 'checked' : ''} onchange="toggleGoal('${personKey}', '${timeframe}', ${idx})" class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                                    <span class="text-sm text-slate-700 select-none ${g.done ? 'line-through text-slate-400' : ''}">${g.text}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="border-t pt-3 mt-auto">
+                        <span class="block text-[10px] font-bold uppercase tracking-wider text-rose-600 mb-0.5">Punishment (< 60%)</span>
+                        <input type="text" value="${punishmentText}" onchange="updatePunishmentText('${personKey}', '${timeframe}', this.value)" class="w-full text-xs border rounded-lg p-2 bg-slate-50 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleGoal(personKey, timeframe, index) {
+            appData[personKey][timeframe][index].done = !appData[personKey][timeframe][index].done;
+            saveData();
+            renderApp();
+        }
+
+        function updatePunishmentText(personKey, timeframe, val) {
+            if (timeframe === 'daily') appData[personKey].punishments.dailyText = val;
+            if (timeframe === 'weekly') appData[personKey].punishments.weeklyText = val;
+            if (timeframe === 'monthly') appData[personKey].punishments.monthlyText = val;
+            saveData();
+        }
+
+        function toggleLedgerItem(personKey, id) {
+            const item = appData[personKey].ledger.find(l => l.id === id);
+            if (item) {
+                item.completed = !item.completed;
+                saveData();
+                renderApp();
+            }
+        }
+
+        function switchTab(tabKey) {
+            activeTab = tabKey;
+            const btn1 = document.getElementById('tabBtn1');
+            const btn2 = document.getElementById('tabBtn2');
+            const c1 = document.getElementById('tabContent1');
+            const c2 = document.getElementById('tabContent2');
+
+            if (tabKey === 'person1') {
+                btn1.className = "pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition flex items-center gap-2";
+                btn2.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center gap-2";
+                c1.classList.remove('hidden');
+                c2.classList.add('hidden');
+            } else {
+                btn2.className = "pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition flex items-center gap-2";
+                btn1.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center gap-2";
+                c2.classList.remove('hidden');
+                c1.classList.add('hidden');
+            }
+        }
+
+        // Goal & Name Manager Modal Functions
+        function openGoalManager() {
+            document.getElementById('goalManagerModal').classList.remove('hidden');
+            document.getElementById('inputName1').value = appData.person1.name;
+            document.getElementById('inputName2').value = appData.person2.name;
+            renderGoalManagerList();
+        }
+
+        function closeGoalManager() {
+            document.getElementById('goalManagerModal').classList.add('hidden');
+            saveData();
+            renderApp();
+        }
+
+        function switchManagerTab(tab) {
+            const tGoals = document.getElementById('mgrTabGoals');
+            const tNames = document.getElementById('mgrTabNames');
+            const pGoals = document.getElementById('mgrPaneGoals');
+            const pNames = document.getElementById('mgrPaneNames');
+
+            if (tab === 'goals') {
+                tGoals.className = "pb-2 px-4 border-b-2 border-indigo-600 text-indigo-600 font-semibold";
+                tNames.className = "pb-2 px-4 border-b-2 border-transparent text-slate-500";
+                pGoals.classList.remove('hidden');
+                pNames.classList.add('hidden');
+            } else {
+                tNames.className = "pb-2 px-4 border-b-2 border-indigo-600 text-indigo-600 font-semibold";
+                tGoals.className = "pb-2 px-4 border-b-2 border-transparent text-slate-500";
+                pNames.classList.remove('hidden');
+                pGoals.classList.add('hidden');
+            }
+        }
+
+        function renderGoalManagerList() {
+            const person = document.getElementById('gmPerson').value;
+            const timeframe = document.getElementById('gmTimeframe').value;
+            const container = document.getElementById('gmGoalList');
+            const goals = appData[person][timeframe];
+            container.innerHTML = '';
+
+            if (goals.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No goals found here.</p>`;
+                return;
+            }
+
+            goals.forEach((goal, index) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between bg-white p-2 rounded border shadow-sm';
+                item.innerHTML = `
+                    <span class="text-sm text-slate-700">${goal.text}</span>
+                    <button onclick="removeGoal('${person}', '${timeframe}', ${index})" class="text-rose-500 hover:text-rose-700 text-xs font-semibold px-2 py-1">Delete</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function addNewGoalFromModal() {
+            const person = document.getElementById('gmPerson').value;
+            const timeframe = document.getElementById('gmTimeframe').value;
+            const input = document.getElementById('newGoalInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            appData[person][timeframe].push({ text: text, done: false });
+            input.value = '';
+            renderGoalManagerList();
+        }
+
+        function removeGoal(person, timeframe, index) {
+            appData[person][timeframe].splice(index, 1);
+            renderGoalManagerList();
+        }
+
+        function saveNamesFromModal() {
+            const n1 = document.getElementById('inputName1').value.trim();
+            const n2 = document.getElementById('inputName2').value.trim();
+            if (n1) appData.person1.name = n1;
+            if (n2) appData.person2.name = n2;
+            saveData();
+            renderApp();
+            alert("Names updated successfully!");
+        }
+
+        // GitHub Modal Functions
+        function openGitHubModal() {
+            document.getElementById('githubModal').classList.remove('hidden');
+            document.getElementById('jsonTextArea').value = JSON.stringify(appData, null, 2);
+        }
+
+        function closeGitHubModal() {
+            document.getElementById('githubModal').classList.add('hidden');
+        }
+
+        function downloadJsonFile() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "data.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function loadJsonFromTextarea() {
+            try {
+                const parsed = JSON.parse(document.getElementById('jsonTextArea').value);
+                appData = parsed;
+                saveData();
+                renderApp();
+                closeGitHubModal();
+                alert("Data imported successfully!");
+            } catch (e) {
+                alert("Invalid JSON format. Please check your syntax.");
+            }
+        }
+
+        function resetDemoData() {
+            if (confirm("Reset all checklists and history back to default demo state?")) {
+                appData = JSON.parse(JSON.stringify(defaultData));
+                saveData();
+                renderApp();
+            }
+        }
+
+        // Initialize on Load
+        window.onload = checkRolloverOnLoad;
+    </script>
+</body>
+</html>
