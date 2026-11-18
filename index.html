@@ -34,9 +34,6 @@
         <button onclick="initApp()" title="Reload from Bin" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition">
           Reload Cloud 🔄
         </button>
-        <button onclick="openManageModal()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition">
-          Manage Goals & Names ⚙️
-        </button>
         <button onclick="openJsonModal()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition">
           Cloud JSON 📂
         </button>
@@ -50,22 +47,7 @@
     <div id="partnersGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
   </main>
 
-  <!-- Manage Goals & Names Modal -->
-  <div id="manageModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-xl overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-        <h2 class="font-bold text-lg text-slate-900">Manage Goals & Participant Names</h2>
-        <button onclick="closeManageModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
-      </div>
-      <div id="manageModalBody" class="p-6 overflow-y-auto space-y-6 text-sm"></div>
-      <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
-        <button onclick="closeManageModal()" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-100">Cancel</button>
-        <button onclick="saveManageChanges()" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Save & Push to Cloud</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cloud JSON Backup / Direct View Modal -->
+  <!-- Cloud JSON Modal -->
   <div id="jsonModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl space-y-4">
       <div class="flex items-center justify-between">
@@ -73,7 +55,7 @@
         <button onclick="closeJsonModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
       </div>
       <p class="text-xs text-slate-500">
-        This is the exact live data currently stored in your JSONBin. You can edit or paste here to overwrite the cloud bin directly.
+        Directly viewing and editing your JSONBin data structure.
       </p>
       <textarea id="jsonTextarea" rows="10" class="w-full font-mono text-xs p-3 rounded-xl border border-slate-300 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
       <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
@@ -89,22 +71,12 @@
   </div>
 
   <script>
-    // =========================================================================
-    // 1. JSONBIN.IO CLOUD CONFIGURATION
-    // =========================================================================
     const JSONBIN_BIN_ID = "6afd4eb1ac6210605a90d9db";
     const JSONBIN_API_KEY = "$2a$10$poeJ0hlf1p.jm6GphPveXeQb4pkZK4IO/A0p4brXNFA/it2Xd9Isu";
     const JSONBIN_HEADER_NAME = "X-Master-Key";
     const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
 
-    // Fallback template structure in case cloud is unreachable
-    let appData = {
-      lastActiveDate: new Date().toISOString().split("T")[0],
-      penaltyThreshold: 60,
-      punishmentText: "Below 60% score penalty active!",
-      updatedAt: Date.now(),
-      partners: []
-    };
+    let appData = null;
 
     function setSyncStatus(state, label) {
       const dot = document.getElementById("syncDot");
@@ -118,9 +90,6 @@
       );
     }
 
-    // =========================================================================
-    // 2. EXCLUSIVE CLOUD LOAD & SAVE (NO LOCAL STORAGE)
-    // =========================================================================
     async function initApp() {
       setSyncStatus("syncing", "Fetching from Bin...");
       try {
@@ -129,11 +98,13 @@
         });
         if (!res.ok) throw new Error("HTTP " + res.status);
         const json = await res.json();
-        if (json.record && Array.isArray(json.record.partners)) {
+        
+        // JSONBin wraps data inside a "record" object
+        if (json.record && json.record.person1 && json.record.person2) {
           appData = json.record;
           setSyncStatus("synced", "Cloud Synced");
         } else {
-          setSyncStatus("error", "Bin data format invalid");
+          setSyncStatus("error", "Invalid format (missing person1/person2)");
         }
       } catch (err) {
         console.warn("Cloud fetch error:", err);
@@ -143,9 +114,7 @@
     }
 
     async function saveState() {
-      appData.updatedAt = Date.now();
-      renderApp(); // Instant UI update
-
+      renderApp();
       setSyncStatus("syncing", "Saving to Bin...");
       try {
         const res = await fetch(JSONBIN_URL, {
@@ -164,23 +133,19 @@
       }
     }
 
-    function calculateScore(partner) {
-      const all = [...(partner.daily || []), ...(partner.weekly || []), ...(partner.monthly || [])];
+    function calculateScore(personObj) {
+      const all = [...(personObj.daily || []), ...(personObj.weekly || []), ...(personObj.monthly || [])];
       if (all.length === 0) return 0;
       const completed = all.filter(g => g.done).length;
       return Math.round((completed / all.length) * 100);
     }
 
-    // =========================================================================
-    // 3. UI RENDERING & INTERACTIONS
-    // =========================================================================
-    function toggleGoal(partnerIndex, category, goalIndex) {
-      appData.partners[partnerIndex][category][goalIndex].done =
-        !appData.partners[partnerIndex][category][goalIndex].done;
-
-      const p = appData.partners[partnerIndex];
-      const currentScore = calculateScore(p);
-      if (currentScore > (p.monthHigh || 0)) p.monthHigh = currentScore;
+    function toggleGoal(personKey, category, goalIndex) {
+      appData[personKey][category][goalIndex].done = !appData[personKey][category][goalIndex].done;
+      
+      const p = appData[personKey];
+      const score = calculateScore(p);
+      if (score > (p.monthHigh || 0)) p.monthHigh = score;
 
       saveState();
     }
@@ -192,17 +157,22 @@
       const grid = document.getElementById("partnersGrid");
       grid.innerHTML = "";
 
-      const underThreshold = [];
-
-      if (!appData.partners || appData.partners.length === 0) {
-        grid.innerHTML = `<div class="card col-span-2 text-center py-10 text-slate-500">No partner data found in the Bin. Click <strong>Manage Goals & Names</strong> or <strong>Cloud JSON</strong> to add your data.</div>`;
+      if (!appData || !appData.person1 || !appData.person2) {
+        grid.innerHTML = `<div class="card col-span-2 text-center py-10 text-slate-500">Unable to read person1 / person2 from the Bin. Check your Cloud JSON.</div>`;
         return;
       }
 
-      appData.partners.forEach((partner, pIdx) => {
-        const score = calculateScore(partner);
-        const isDanger = score < (appData.penaltyThreshold || 60);
-        if (isDanger) underThreshold.push(partner.name);
+      const persons = [
+        { key: "person1", data: appData.person1 },
+        { key: "person2", data: appData.person2 }
+      ];
+
+      const underThreshold = [];
+
+      persons.forEach(({ key, data }) => {
+        const score = calculateScore(data);
+        const isDanger = score < 60;
+        if (isDanger) underThreshold.push(data.name);
 
         const card = document.createElement("div");
         card.className = "card space-y-5";
@@ -210,10 +180,10 @@
         card.innerHTML = `
           <div class="flex items-start justify-between gap-3">
             <div>
-              <h2 class="text-xl font-bold text-slate-900">${escapeHtml(partner.name)}</h2>
+              <h2 class="text-xl font-bold text-slate-900">${escapeHtml(data.name)}</h2>
               <div class="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                <span>Month High: <strong class="text-emerald-600">${partner.monthHigh || score}%</strong></span>
-                <span>Month Worst: <strong class="text-rose-600">${partner.monthWorst ?? score}%</strong></span>
+                <span>Month High: <strong class="text-emerald-600">${data.monthHigh || score}%</strong></span>
+                <span>Month Worst: <strong class="text-rose-600">${data.monthWorst ?? score}%</strong></span>
               </div>
             </div>
             <div class="text-right">
@@ -228,9 +198,9 @@
             <div class="h-full transition-all duration-300 ${isDanger ? "bg-rose-500" : "bg-indigo-600"}" style="width: ${score}%"></div>
           </div>
 
-          ${renderGoalSection(partner, pIdx, "daily", "Daily Goals")}
-          ${renderGoalSection(partner, pIdx, "weekly", "Weekly Goals")}
-          ${renderGoalSection(partner, pIdx, "monthly", "Monthly Goals")}
+          ${renderGoalSection(key, data, "daily", "Daily Goals")}
+          ${renderGoalSection(key, data, "weekly", "Weekly Goals")}
+          ${renderGoalSection(key, data, "monthly", "Monthly Goals")}
         `;
 
         grid.appendChild(card);
@@ -239,22 +209,22 @@
       const banner = document.getElementById("alertBanner");
       if (underThreshold.length > 0) {
         banner.className = "rounded-xl p-4 border text-sm font-medium bg-rose-50 border-rose-200 text-rose-800";
-        banner.innerHTML = `⚠️ <strong>Penalty Alert (${underThreshold.join(" & ")}):</strong> ${escapeHtml(appData.punishmentText)}`;
+        banner.innerHTML = `⚠️ <strong>Penalty Alert (${underThreshold.join(" & ")}):</strong> Maggie's: ${escapeHtml(appData.person1.punishments?.dailyText || '')} | Yemi's: ${escapeHtml(appData.person2.punishments?.dailyText || '')}`;
         banner.classList.remove("hidden");
       } else {
         banner.className = "rounded-xl p-4 border text-sm font-medium bg-emerald-50 border-emerald-200 text-emerald-800";
-        banner.innerHTML = `✅ Both partners are at or above ${appData.penaltyThreshold || 60}% — penalty avoided!`;
+        banner.innerHTML = `✅ Both participants are on track!`;
         banner.classList.remove("hidden");
       }
     }
 
-    function renderGoalSection(partner, pIdx, category, title) {
-      const items = partner[category] || [];
+    function renderGoalSection(personKey, personObj, category, title) {
+      const items = personObj[category] || [];
       const listHtml = items.length === 0
         ? `<p class="text-xs text-slate-400 italic">No goals added yet.</p>`
         : items.map((item, gIdx) => `
             <label class="flex items-center gap-3 p-2.5 rounded-xl border ${item.done ? "bg-slate-50 border-slate-200" : "bg-white border-slate-200 hover:border-indigo-300"} cursor-pointer transition">
-              <input type="checkbox" ${item.done ? "checked" : ""} onchange="toggleGoal(${pIdx}, '${category}', ${gIdx})" class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
+              <input type="checkbox" ${item.done ? "checked" : ""} onchange="toggleGoal('${personKey}', '${category}', ${gIdx})" class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
               <span class="text-sm ${item.done ? "line-through text-slate-400" : "text-slate-800"}">${escapeHtml(item.text)}</span>
             </label>
           `).join("");
@@ -267,83 +237,10 @@
       `;
     }
 
-    // =========================================================================
-    // 4. MANAGE GOALS & NAMES MODAL
-    // =========================================================================
-    let draftPartners = [];
-
-    function openManageModal() {
-      draftPartners = JSON.parse(JSON.stringify(appData.partners || []));
-      renderManageModalBody();
-      const modal = document.getElementById("manageModal");
-      modal.classList.remove("hidden");
-      modal.classList.add("flex");
-    }
-
-    function closeManageModal() {
-      const modal = document.getElementById("manageModal");
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
-    }
-
-    function renderManageModalBody() {
-      const body = document.getElementById("manageModalBody");
-      body.innerHTML = `
-        <div class="space-y-2">
-          <label class="block text-xs font-bold uppercase text-slate-500">Punishment / Consequence Text (Below 60%)</label>
-          <input id="draftPunishment" type="text" value="${escapeHtml(appData.punishmentText)}" class="w-full px-3 py-2 rounded-lg border border-slate-300" />
-        </div>
-      ` + draftPartners.map((p, pIdx) => `
-        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-4">
-          <div>
-            <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Participant ${pIdx + 1} Name</label>
-            <input type="text" value="${escapeHtml(p.name)}" onchange="draftPartners[${pIdx}].name = this.value" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white font-semibold" />
-          </div>
-          ${["daily", "weekly", "monthly"].map(cat => `
-            <div class="space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase text-slate-600">${cat} Goals</span>
-                <button type="button" onclick="addDraftGoal(${pIdx}, '${cat}')" class="text-xs font-semibold text-indigo-600 hover:underline">+ Add ${cat}</button>
-              </div>
-              <div class="space-y-1.5">
-                ${(p[cat] || []).map((g, gIdx) => `
-                  <div class="flex items-center gap-2">
-                    <input type="text" value="${escapeHtml(g.text)}" onchange="draftPartners[${pIdx}]['${cat}'][${gIdx}].text = this.value" class="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs" />
-                    <button type="button" onclick="removeDraftGoal(${pIdx}, '${cat}', ${gIdx})" class="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 rounded">✕</button>
-                  </div>
-                `).join("")}
-              </div>
-            </div>
-          `).join("")}
-        </div>
-      `).join("");
-    }
-
-    function addDraftGoal(pIdx, cat) {
-      if (!draftPartners[pIdx][cat]) draftPartners[pIdx][cat] = [];
-      draftPartners[pIdx][cat].push({ id: "g_" + Date.now(), text: "New goal", done: false });
-      renderManageModalBody();
-    }
-
-    function removeDraftGoal(pIdx, cat, gIdx) {
-      draftPartners[pIdx][cat].splice(gIdx, 1);
-      renderManageModalBody();
-    }
-
-    function saveManageChanges() {
-      const punishmentInput = document.getElementById("draftPunishment");
-      if (punishmentInput) appData.punishmentText = punishmentInput.value.trim() || appData.punishmentText;
-      appData.partners = draftPartners;
-      closeManageModal();
-      saveState();
-    }
-
-    // =========================================================================
-    // 5. CLOUD JSON MODAL
-    // =========================================================================
     function openJsonModal() {
       document.getElementById("jsonTextarea").value = JSON.stringify(appData, null, 2);
       const modal = document.getElementById("jsonModal");
+      modal.classList.0 = "flex"; // simplified open
       modal.classList.remove("hidden");
       modal.classList.add("flex");
     }
@@ -354,16 +251,16 @@
       modal.classList.remove("flex");
     }
 
-    function importJsonData() {
+    async function importJsonData() {
       try {
         const parsed = JSON.parse(document.getElementById("jsonTextarea").value);
-        if (!parsed || !Array.isArray(parsed.partners)) {
-          alert("Invalid DuoTrack JSON format (missing 'partners' array).");
+        if (!parsed || !parsed.person1 || !parsed.person2) {
+          alert("Invalid format: Must contain person1 and person2.");
           return;
         }
         appData = parsed;
         closeJsonModal();
-        saveState();
+        await saveState();
         alert("Pushed to Cloud successfully!");
       } catch (e) {
         alert("Could not parse JSON. Check brackets and quotes.");
@@ -388,9 +285,6 @@
         .replace(/"/g, "&quot;");
     }
 
-    // =========================================================================
-    // 6. STARTUP: FETCH EXCLUSIVELY FROM CLOUD BIN
-    // =========================================================================
     initApp();
   </script>
 </body>
