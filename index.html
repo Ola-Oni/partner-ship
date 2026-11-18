@@ -2,852 +2,925 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DuoTrack — Partner Accountability & Goals</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #f8fafc;
-      color: #0f172a;
-      margin: 0;
-    }
-
-    .card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 1rem;
-      padding: 1.25rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .sync-dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 9999px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DuoTrack — Partner Accountability</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background:#080d18; color:#e5e7eb; font-family:Inter,system-ui,sans-serif; }
+  .panel { background:#111a2b; border:1px solid #26334a; border-radius:16px; }
+  .muted { color:#91a0b8; }
+  .btn { padding:9px 14px; border-radius:9px; font-size:13px; font-weight:700; transition:.2s; }
+  .btn:hover { filter:brightness(1.15); transform:translateY(-1px); }
+  .primary { background:#2563eb; color:white; }
+  .secondary { background:#26334a; color:#e5e7eb; }
+  .danger { background:#991b1b; color:white; }
+  .success { background:#166534; color:white; }
+  input,select,textarea { background:#0b1220; border:1px solid #334155; color:white; border-radius:8px; padding:10px; width:100%; outline:none; }
+  input:focus,select:focus,textarea:focus { border-color:#3b82f6; }
+  .goal { background:#0c1525; border:1px solid #26334a; border-radius:10px; padding:12px; }
+  .tab { padding:9px 13px; border-radius:8px; font-size:13px; font-weight:700; background:#1c293e; color:#aab8ce; }
+  .tab.active { background:#2563eb; color:white; }
+  .modal-bg { background:rgba(0,0,0,.78); }
+  .hidden { display:none !important; }
+  .progress { height:7px; background:#26334a; border-radius:99px; overflow:hidden; }
+  .progress > div { height:100%; background:#3b82f6; border-radius:99px; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+</style>
 </head>
 
-<body class="bg-slate-50 text-slate-900 min-h-screen pb-12">
+<body class="min-h-screen">
+<div class="max-w-6xl mx-auto px-4 py-6 md:px-6">
 
   <!-- HEADER -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
-    <div class="max-w-5xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-7">
+    <div>
+      <div class="text-blue-400 text-xs font-bold tracking-[.25em] uppercase">Two people. One commitment.</div>
+      <h1 class="text-3xl font-black mt-1">DuoTrack<span class="text-blue-500">.</span></h1>
+      <p class="muted text-sm mt-1">Partner accountability and goal tracking</p>
+    </div>
 
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white font-bold flex items-center justify-center text-lg shadow-sm">
-          D
-        </div>
-
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="font-bold text-lg tracking-tight text-slate-900">
-              DuoTrack
-            </h1>
-
-            <span id="syncBadge"
-              class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-
-              <span id="syncDot" class="sync-dot bg-amber-400"></span>
-              <span id="syncText">Connecting...</span>
-
-            </span>
-          </div>
-
-          <p id="currentDateLabel" class="text-xs text-slate-500"></p>
-        </div>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-2">
-
-        <button
-          onclick="initApp()"
-          title="Reload from Bin"
-          class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition">
-          Reload Cloud 🔄
-        </button>
-
-        <button
-          onclick="openJsonModal()"
-          class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition">
-          Cloud JSON 📂
-        </button>
-
-      </div>
+    <div class="flex flex-wrap gap-2">
+      <button class="btn primary" onclick="openManager()">Manage</button>
+      <button class="btn secondary" onclick="openJsonModal()">JSON</button>
+      <button class="btn secondary" onclick="testRollover()">Test Rollover</button>
+      <button class="btn danger" onclick="resetApp()">Reset</button>
     </div>
   </header>
 
-
-  <!-- MAIN DASHBOARD -->
-  <main class="max-w-5xl mx-auto px-4 pt-6 space-y-6">
-
-    <div id="alertBanner"
-      class="hidden rounded-xl p-4 border text-sm font-medium">
+  <div class="flex items-center justify-between gap-3 mb-5">
+    <div>
+      <div class="text-xs muted uppercase tracking-wider">Current tracking date</div>
+      <div id="currentDate" class="font-bold text-lg">Loading...</div>
     </div>
-
-    <div id="partnersGrid"
-      class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    </div>
-
-  </main>
-
-
-  <!-- JSON MODAL -->
-  <div id="jsonModal"
-    class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-
-    <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl space-y-4">
-
-      <div class="flex items-center justify-between">
-        <h2 class="font-bold text-lg text-slate-900">
-          Cloud JSON Data
-        </h2>
-
-        <button
-          onclick="closeJsonModal()"
-          class="text-slate-400 hover:text-slate-700 text-xl font-bold">
-          &times;
-        </button>
-      </div>
-
-      <p class="text-xs text-slate-500">
-        View, edit, import and export your JSONBin data.
-      </p>
-
-      <textarea
-        id="jsonTextarea"
-        rows="12"
-        spellcheck="false"
-        class="w-full font-mono text-xs p-3 rounded-xl border border-slate-300 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-      </textarea>
-
-      <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
-
-        <button
-          onclick="downloadJsonFile()"
-          class="px-3.5 py-2 rounded-lg bg-slate-100 text-slate-800 text-xs font-semibold hover:bg-slate-200">
-          Download JSON ⬇️
-        </button>
-
-        <div class="flex gap-2">
-
-          <button
-            onclick="closeJsonModal()"
-            class="px-3.5 py-2 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50">
-            Close
-          </button>
-
-          <button
-            onclick="importJsonData()"
-            class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700">
-            Push to Cloud
-          </button>
-
-        </div>
-      </div>
-    </div>
+    <div id="syncStatus" class="text-xs text-amber-400">Connecting...</div>
   </div>
 
+  <!-- DASHBOARD -->
+  <section class="grid md:grid-cols-2 gap-5" id="peopleContainer"></section>
 
-  <!-- JAVASCRIPT -->
-  <script>
+  <!-- COMPARISON -->
+  <section class="panel p-5 mt-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="font-bold text-lg">Head-to-head</h2>
+      <span class="text-xs muted">Daily completion</span>
+    </div>
+    <div id="comparison"></div>
+  </section>
 
-    // ==========================================
-    // JSONBIN CONFIGURATION
-    // ==========================================
+  <!-- PUNISHMENT LEDGER -->
+  <section class="panel p-5 mt-6">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
+      <div>
+        <h2 class="font-bold text-lg">Punishment ledger</h2>
+        <p class="muted text-xs">Records of accountability penalties</p>
+      </div>
+      <span id="ledgerCount" class="text-xs muted"></span>
+    </div>
+    <div id="ledgerContainer" class="space-y-3"></div>
+  </section>
 
-    const JSONBIN_BIN_ID = "6afd4eb1ac6210605a90d9db";
+  <footer class="text-center muted text-xs py-8">
+    DuoTrack · Stay accountable to each other.
+  </footer>
+</div>
 
-    // IMPORTANT:
-    // Insert your NEW JSONBin Master Key here for local testing.
-    // Never publish a real Master Key in public website source code.
+<!-- MANAGER MODAL -->
+<div id="managerModal" class="hidden fixed inset-0 z-40 modal-bg overflow-y-auto p-3 sm:p-6">
+  <div class="panel max-w-3xl mx-auto p-5 sm:p-6 my-5">
+    <div class="flex justify-between items-center mb-5">
+      <div>
+        <h2 class="text-xl font-black">Manage DuoTrack</h2>
+        <p class="muted text-xs mt-1">Manage participants, goals and punishments</p>
+      </div>
+      <button class="btn secondary" onclick="closeManager()">Close</button>
+    </div>
 
-    const JSONBIN_API_KEY = "$2a$10$poeJ0hlf1p.jm6GphPveXeQb4pkZK4IO/A0p4brXNFA/it2Xd9Isu";
+    <div class="flex flex-wrap gap-2 mb-5">
+      <button id="tabGoals" class="tab active" onclick="switchManagerTab('goals')">Goals</button>
+      <button id="tabNames" class="tab" onclick="switchManagerTab('names')">Names</button>
+      <button id="tabPunishments" class="tab" onclick="switchManagerTab('punishments')">Punishments</button>
+    </div>
 
-    const JSONBIN_URL =
-      `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+    <!-- GOALS PANE -->
+    <div id="paneGoals">
+      <div class="grid sm:grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="text-xs muted block mb-2">Participant</label>
+          <select id="goalPerson" onchange="renderGoalManager()">
+            <option value="person1">Person 1</option>
+            <option value="person2">Person 2</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs muted block mb-2">Goal timeframe</label>
+          <select id="goalPeriod" onchange="renderGoalManager()">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+      </div>
 
-    const JSONBIN_HEADER_NAME = "X-Master-Key";
+      <div id="goalManagerList" class="space-y-2 mb-4"></div>
 
-    let appData = null;
+      <div class="flex gap-2">
+        <input id="newGoal" placeholder="Write a new goal..." maxlength="180">
+        <button class="btn primary shrink-0" onclick="addGoal()">Add goal</button>
+      </div>
+    </div>
 
+    <!-- NAMES PANE -->
+    <div id="paneNames" class="hidden space-y-4">
+      <div>
+        <label class="text-xs muted block mb-2">Person 1 name</label>
+        <input id="name1Input" placeholder="Person 1">
+      </div>
+      <div>
+        <label class="text-xs muted block mb-2">Person 2 name</label>
+        <input id="name2Input" placeholder="Person 2">
+      </div>
+      <button class="btn primary" onclick="saveNames()">Save names</button>
+    </div>
 
-    // ==========================================
-    // SYNC STATUS
-    // ==========================================
+    <!-- PUNISHMENTS PANE -->
+    <div id="panePunishments" class="hidden">
+      <div class="mb-4">
+        <label class="text-xs muted block mb-2">Participant</label>
+        <select id="punishPerson" onchange="loadPunishments()">
+          <option value="person1">Person 1</option>
+          <option value="person2">Person 2</option>
+        </select>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="text-xs muted block mb-2">Daily punishment</label>
+          <textarea id="dailyPunishment" rows="2" placeholder="What happens if daily goals are missed?"></textarea>
+        </div>
+        <div>
+          <label class="text-xs muted block mb-2">Weekly punishment</label>
+          <textarea id="weeklyPunishment" rows="2" placeholder="What happens if weekly goals are missed?"></textarea>
+        </div>
+        <div>
+          <label class="text-xs muted block mb-2">Monthly punishment</label>
+          <textarea id="monthlyPunishment" rows="2" placeholder="What happens if monthly goals are missed?"></textarea>
+        </div>
+      </div>
+      <button class="btn primary mt-4" onclick="savePunishments()">Save punishments</button>
+    </div>
+  </div>
+</div>
 
-    function setSyncStatus(state, label) {
+<!-- JSON MODAL -->
+<div id="jsonModal" class="hidden fixed inset-0 z-50 modal-bg overflow-y-auto p-3 sm:p-6">
+  <div class="panel max-w-2xl mx-auto p-5 sm:p-6 my-5">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-black">JSON data</h2>
+      <button class="btn secondary" onclick="closeJsonModal()">Close</button>
+    </div>
+    <p class="muted text-sm mb-3">Export your current data or import a previously saved JSON file.</p>
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button class="btn primary" onclick="exportJson()">Download JSON</button>
+      <button class="btn secondary" onclick="copyJson()">Copy JSON</button>
+    </div>
+    <textarea id="jsonArea" rows="13" spellcheck="false" class="font-mono text-xs"></textarea>
+    <div class="flex flex-wrap gap-2 mt-3">
+      <label class="btn secondary cursor-pointer">
+        Choose JSON file
+        <input id="jsonFile" type="file" accept=".json,application/json" class="hidden" onchange="loadJsonFile(event)">
+      </label>
+      <button class="btn success" onclick="importJson()">Import JSON</button>
+    </div>
+    <p class="muted text-xs mt-4">Importing replaces the current app data and syncs it to JSONBin.</p>
+  </div>
+</div>
 
-      const dot = document.getElementById("syncDot");
-      const text = document.getElementById("syncText");
-      const badge = document.getElementById("syncBadge");
+<script>
+/* =========================================================
+   JSONBIN CONFIGURATION
+   ========================================================= */
 
-      if (!dot || !text || !badge) return;
+const BIN_ID = "6afd4eb1ac6210605a90d9db";
+const JSONBIN_MASTER_KEY = "PASTE_YOUR_JSONBIN_MASTER_KEY_HERE";
+const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
-      text.textContent = label;
+/*
+  IMPORTANT:
+  A master key inside browser JavaScript is visible to visitors.
+  For a public website, use a secure backend/proxy instead.
+*/
 
-      dot.className = "sync-dot";
+/* =========================================================
+   DEFAULT DATA
+   ========================================================= */
 
-      if (state === "synced") {
-        dot.classList.add("bg-emerald-500");
-        badge.className =
-          "inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700";
-      }
+function createDefaultData() {
+  return {
+    activeDate: new Date().toISOString().slice(0,10),
+    activeWeek: "",
+    activeMonth: new Date().toISOString().slice(0,7),
 
-      else if (state === "syncing") {
-        dot.classList.add("bg-blue-500", "animate-pulse");
-        badge.className =
-          "inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700";
-      }
+    person1: createPerson("Person 1"),
+    person2: createPerson("Person 2")
+  };
+}
 
-      else {
-        dot.classList.add("bg-rose-500");
-        badge.className =
-          "inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-rose-50 text-rose-700";
-      }
+function createPerson(name) {
+  return {
+    name,
+    monthHigh: 0,
+    monthWorst: 0,
+
+    daily: [],
+    weekly: [],
+    monthly: [],
+
+    punishments: {
+      dailyText: "",
+      weeklyText: "",
+      monthlyText: ""
+    },
+
+    ledger: []
+  };
+}
+
+let appData = createDefaultData();
+let isSaving = false;
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#039;"
+  })[char]);
+}
+
+function setSync(message, color = "text-amber-400") {
+  const el = document.getElementById("syncStatus");
+  el.className = `text-xs ${color}`;
+  el.textContent = message;
+}
+
+function getPerson(key) {
+  return appData[key];
+}
+
+function getScore(person, period = "daily") {
+  const goals = person[period] || [];
+  if (!goals.length) return 0;
+
+  const completed = goals.filter(goal => goal.done).length;
+  return Math.round((completed / goals.length) * 100);
+}
+
+function formatDate(dateString) {
+  if (!dateString) return "Not set";
+  const date = new Date(dateString + "T12:00:00");
+  return date.toLocaleDateString(undefined, {
+    weekday:"long", year:"numeric", month:"long", day:"numeric"
+  });
+}
+
+function todayString() {
+  return new Date().toISOString().slice(0,10);
+}
+
+/* =========================================================
+   DATA VALIDATION
+   ========================================================= */
+
+function validatePerson(person) {
+  if (!person || typeof person !== "object") {
+    throw new Error("A participant record is missing.");
+  }
+
+  if (typeof person.name !== "string") {
+    throw new Error("A participant name is invalid.");
+  }
+
+  ["daily","weekly","monthly"].forEach(period => {
+    if (!Array.isArray(person[period])) {
+      throw new Error(`The ${period} goals must be an array.`);
     }
 
-
-    // ==========================================
-    // VALIDATE JSON STRUCTURE
-    // ==========================================
-
-    function validateData(data) {
-
-      if (!data || typeof data !== "object" || Array.isArray(data)) {
-        return "The JSON must contain an object.";
+    person[period].forEach(goal => {
+      if (!goal || typeof goal.text !== "string" || typeof goal.done !== "boolean") {
+        throw new Error(`A ${period} goal has an invalid format.`);
       }
+    });
+  });
 
-      for (const personKey of ["person1", "person2"]) {
+  if (!person.punishments || typeof person.punishments !== "object") {
+    person.punishments = {
+      dailyText:"",
+      weeklyText:"",
+      monthlyText:""
+    };
+  }
 
-        const person = data[personKey];
+  ["dailyText","weeklyText","monthlyText"].forEach(field => {
+    if (typeof person.punishments[field] !== "string") {
+      person.punishments[field] = "";
+    }
+  });
 
-        if (!person || typeof person !== "object" || Array.isArray(person)) {
-          return `Missing or invalid ${personKey}.`;
-        }
+  if (!Array.isArray(person.ledger)) person.ledger = [];
+  if (typeof person.monthHigh !== "number") person.monthHigh = 0;
+  if (typeof person.monthWorst !== "number") person.monthWorst = 0;
+}
 
-        if (typeof person.name !== "string" || !person.name.trim()) {
-          return `${personKey} must have a name.`;
-        }
+function validateData(data) {
+  if (!data || typeof data !== "object") {
+    throw new Error("The JSON data is not an object.");
+  }
 
-        for (const category of ["daily", "weekly", "monthly"]) {
+  validatePerson(data.person1);
+  validatePerson(data.person2);
 
-          if (!Array.isArray(person[category])) {
-            return `${personKey}.${category} must be an array.`;
-          }
+  if (typeof data.activeDate !== "string") {
+    data.activeDate = todayString();
+  }
 
-          for (const goal of person[category]) {
+  if (typeof data.activeWeek !== "string") data.activeWeek = "";
+  if (typeof data.activeMonth !== "string") {
+    data.activeMonth = data.activeDate.slice(0,7);
+  }
 
-            if (
-              !goal ||
-              typeof goal.text !== "string" ||
-              typeof goal.done !== "boolean"
-            ) {
-              return `Invalid goal in ${personKey}.${category}.`;
-            }
+  return data;
+}
 
-          }
-        }
+/* =========================================================
+   JSONBIN CLOUD SYNC
+   ========================================================= */
 
-        if (
-          person.punishments !== undefined &&
-          (typeof person.punishments !== "object" ||
-           person.punishments === null ||
-           Array.isArray(person.punishments))
-        ) {
-          return `Invalid punishments object for ${personKey}.`;
-        }
+function checkConfig() {
+  if (
+    !BIN_ID ||
+    !JSONBIN_MASTER_KEY ||
+    JSONBIN_MASTER_KEY === "PASTE_YOUR_JSONBIN_MASTER_KEY_HERE"
+  ) {
+    throw new Error("Add your JSONBin key in the configuration first.");
+  }
+}
 
-        if (
-          person.ledger !== undefined &&
-          !Array.isArray(person.ledger)
-        ) {
-          return `Invalid ledger for ${personKey}.`;
-        }
-      }
+async function loadFromCloud() {
+  checkConfig();
 
-      return null;
+  const response = await fetch(`${BIN_URL}/latest`, {
+    method:"GET",
+    headers: {
+      "X-Master-Key": JSONBIN_MASTER_KEY
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Cloud loading failed (${response.status}).`);
+  }
+
+  const result = await response.json();
+  return validateData(result.record);
+}
+
+async function saveToCloud() {
+  checkConfig();
+
+  if (isSaving) {
+    throw new Error("A save is already in progress. Try again shortly.");
+  }
+
+  isSaving = true;
+  setSync("Saving...", "text-amber-400");
+
+  try {
+    validateData(appData);
+
+    const response = await fetch(BIN_URL, {
+      method:"PUT",
+      headers: {
+        "Content-Type":"application/json",
+        "X-Master-Key":JSONBIN_MASTER_KEY
+      },
+      body:JSON.stringify(appData)
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`Cloud save failed (${response.status}): ${detail}`);
     }
 
-
-    // ==========================================
-    // LOAD DATA FROM JSONBIN
-    // ==========================================
-
-    async function initApp() {
-
-      setSyncStatus("syncing", "Fetching from Bin...");
-
-      try {
-
-        if (
-          !JSONBIN_API_KEY ||
-          JSONBIN_API_KEY === "PASTE_YOUR_JSONBIN_MASTER_KEY_HERE"
-        ) {
-          throw new Error("Please configure your JSONBin API key.");
-        }
-
-        const res = await fetch(`${JSONBIN_URL}/latest`, {
-          method: "GET",
-          headers: {
-            [JSONBIN_HEADER_NAME]: JSONBIN_API_KEY
-          }
-        });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`HTTP ${res.status}: ${errorText}`);
-        }
-
-        const json = await res.json();
-
-        const record = json.record;
-
-        const validationError = validateData(record);
-
-        if (validationError) {
-          throw new Error(validationError);
-        }
-
-        appData = record;
-
-        setSyncStatus("synced", "Cloud Synced");
-
-      } catch (err) {
-
-        console.error("Cloud fetch error:", err);
-
-        setSyncStatus("error", "Connection Failed");
-
-        showAlert(
-          "error",
-          "Cloud connection failed: " + err.message
-        );
-
-      }
-
-      renderApp();
-    }
-
-
-    // ==========================================
-    // SAVE DATA TO JSONBIN
-    // ==========================================
-
-    async function saveState() {
-
-      if (!appData) {
-        throw new Error("There is no data to save.");
-      }
-
-      const validationError = validateData(appData);
-
-      if (validationError) {
-        throw new Error(validationError);
-      }
-
-      renderApp();
-
-      setSyncStatus("syncing", "Saving to Bin...");
-
-      try {
-
-        const res = await fetch(JSONBIN_URL, {
-
-          method: "PUT",
-
-          headers: {
-            "Content-Type": "application/json",
-            [JSONBIN_HEADER_NAME]: JSONBIN_API_KEY
-          },
-
-          body: JSON.stringify(appData)
-
-        });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`HTTP ${res.status}: ${errorText}`);
-        }
-
-        setSyncStatus("synced", "Cloud Synced");
-
-        return true;
-
-      } catch (err) {
-
-        console.error("Cloud save error:", err);
-
-        setSyncStatus("error", "Save Failed");
-
-        throw err;
-      }
-    }
-
-
-    // ==========================================
-    // ALERT MESSAGE
-    // ==========================================
-
-    function showAlert(type, message) {
-
-      const banner = document.getElementById("alertBanner");
-
-      banner.className = "rounded-xl p-4 border text-sm font-medium";
-
-      if (type === "error") {
-
-        banner.classList.add(
-          "bg-rose-50",
-          "border-rose-200",
-          "text-rose-800"
-        );
-
-      } else {
-
-        banner.classList.add(
-          "bg-emerald-50",
-          "border-emerald-200",
-          "text-emerald-800"
-        );
-
-      }
-
-      banner.textContent = message;
-      banner.classList.remove("hidden");
-    }
-
-
-    // ==========================================
-    // SCORE CALCULATION
-    // ==========================================
-
-    function calculateScore(personObj) {
-
-      const all = [
-        ...(personObj.daily || []),
-        ...(personObj.weekly || []),
-        ...(personObj.monthly || [])
-      ];
-
-      if (all.length === 0) return 0;
-
-      const completed = all.filter(g => g.done).length;
-
-      return Math.round((completed / all.length) * 100);
-    }
-
-
-    // ==========================================
-    // TOGGLE GOALS
-    // ==========================================
-
-    async function toggleGoal(personKey, category, goalIndex) {
-
-      if (!appData || !appData[personKey]) return;
-
-      const goals = appData[personKey][category];
-
-      if (!Array.isArray(goals) || !goals[goalIndex]) return;
-
-      goals[goalIndex].done = !goals[goalIndex].done;
-
-      const person = appData[personKey];
-
-      const score = calculateScore(person);
-
-      if (score > (person.monthHigh || 0)) {
-        person.monthHigh = score;
-      }
-
-      renderApp();
-
-      try {
-
-        await saveState();
-
-      } catch (err) {
-
-        showAlert(
-          "error",
-          "Your change could not be saved to the cloud: " + err.message
-        );
-
-      }
-    }
-
-
-    // ==========================================
-    // MAIN DASHBOARD RENDER
-    // ==========================================
-
-    function renderApp() {
-
-      document.getElementById("currentDateLabel").textContent =
-        new Date().toLocaleDateString(undefined, {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric"
-        });
-
-      const grid = document.getElementById("partnersGrid");
-
-      grid.innerHTML = "";
-
-      if (!appData || !appData.person1 || !appData.person2) {
-
-        grid.innerHTML = `
-          <div class="card col-span-2 text-center py-10 text-slate-500">
-            Unable to load participant data. Check your JSONBin connection.
+    setSync("Cloud synced ✓", "text-green-400");
+    return true;
+
+  } catch (error) {
+    setSync("Sync failed", "text-red-400");
+    throw error;
+  } finally {
+    isSaving = false;
+  }
+}
+
+async function initApp() {
+  setSync("Connecting...", "text-amber-400");
+
+  try {
+    appData = await loadFromCloud();
+    renderApp();
+    setSync("Cloud connected ✓", "text-green-400");
+  } catch (error) {
+    console.error(error);
+    renderApp();
+    setSync("Connection failed — check JSONBin setup", "text-red-400");
+    alert("Could not load your cloud data.\n\n" + error.message);
+  }
+}
+
+/* =========================================================
+   SAVE WRAPPER
+   ========================================================= */
+
+async function saveAndRender() {
+  renderApp();
+
+  try {
+    await saveToCloud();
+    renderApp();
+  } catch (error) {
+    console.error(error);
+    alert("Your change is currently visible in this browser, but it was NOT saved to the cloud.\n\n" + error.message);
+  }
+}
+
+/* =========================================================
+   MAIN DASHBOARD
+   ========================================================= */
+
+function renderApp() {
+  document.getElementById("currentDate").textContent =
+    formatDate(appData.activeDate);
+
+  renderPeople();
+  renderComparison();
+  renderLedger();
+}
+
+function renderPeople() {
+  const container = document.getElementById("peopleContainer");
+
+  container.innerHTML = ["person1","person2"].map((key,index) => {
+    const person = getPerson(key);
+    const score = getScore(person);
+    const goals = person.daily || [];
+    const completed = goals.filter(g => g.done).length;
+
+    return `
+      <article class="panel p-5">
+        <div class="flex justify-between items-start gap-3 mb-4">
+          <div>
+            <div class="text-xs muted uppercase tracking-wider">Participant ${index + 1}</div>
+            <h2 class="text-2xl font-black mt-1">${escapeHTML(person.name)}</h2>
           </div>
-        `;
-
-        return;
-      }
-
-      const persons = [
-        { key: "person1", data: appData.person1 },
-        { key: "person2", data: appData.person2 }
-      ];
-
-      const underThreshold = [];
-
-      persons.forEach(({ key, data }) => {
-
-        const score = calculateScore(data);
-
-        const isDanger = score < 60;
-
-        if (isDanger) {
-          underThreshold.push(data.name);
-        }
-
-        const card = document.createElement("div");
-
-        card.className = "card space-y-5";
-
-        card.innerHTML = `
-
-          <div class="flex items-start justify-between gap-3">
-
-            <div>
-
-              <h2 class="text-xl font-bold text-slate-900">
-                ${escapeHtml(data.name)}
-              </h2>
-
-              <div class="flex items-center gap-3 text-xs text-slate-500 mt-1">
-
-                <span>
-                  Month High:
-                  <strong class="text-emerald-600">
-                    ${Number(data.monthHigh ?? score)}%
-                  </strong>
-                </span>
-
-                <span>
-                  Month Worst:
-                  <strong class="text-rose-600">
-                    ${Number(data.monthWorst ?? score)}%
-                  </strong>
-                </span>
-
-              </div>
-
-            </div>
-
-            <div class="text-right">
-
-              <span class="text-2xl font-extrabold ${
-                isDanger ? "text-rose-600" : "text-indigo-600"
-              }">
-                ${score}%
-              </span>
-
-              <div class="text-[11px] font-medium ${
-                isDanger ? "text-rose-500" : "text-emerald-600"
-              }">
-                ${isDanger ? "Below 60% Penalty Zone" : "On Track"}
-              </div>
-
-            </div>
-
+          <div class="text-right">
+            <div class="text-3xl font-black text-blue-400">${score}%</div>
+            <div class="text-xs muted">Daily score</div>
           </div>
-
-
-          <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-
-            <div
-              class="h-full transition-all duration-300 ${
-                isDanger ? "bg-rose-500" : "bg-indigo-600"
-              }"
-              style="width: ${score}%">
-            </div>
-
-          </div>
-
-
-          ${renderGoalSection(key, data, "daily", "Daily Goals")}
-
-          ${renderGoalSection(key, data, "weekly", "Weekly Goals")}
-
-          ${renderGoalSection(key, data, "monthly", "Monthly Goals")}
-
-        `;
-
-        grid.appendChild(card);
-
-      });
-
-
-      // PENALTY ALERT
-
-      if (underThreshold.length > 0) {
-
-        const p1 = appData.person1;
-        const p2 = appData.person2;
-
-        showAlert(
-          "error",
-          `⚠️ Penalty Alert (${underThreshold.join(" & ")}): Maggie's: ${
-            p1.punishments?.dailyText || ""
-          } | Yemi's: ${
-            p2.punishments?.dailyText || ""
-          }`
-        );
-
-      } else {
-
-        showAlert(
-          "success",
-          "✅ Both participants are on track!"
-        );
-
-      }
-    }
-
-
-    // ==========================================
-    // GOAL SECTION
-    // ==========================================
-
-    function renderGoalSection(personKey, personObj, category, title) {
-
-      const items = personObj[category] || [];
-
-      const listHtml = items.length === 0
-
-        ? `
-          <p class="text-xs text-slate-400 italic">
-            No goals added yet.
-          </p>
-        `
-
-        : items.map((item, gIdx) => `
-
-          <label class="flex items-center gap-3 p-2.5 rounded-xl border ${
-            item.done
-              ? "bg-slate-50 border-slate-200"
-              : "bg-white border-slate-200 hover:border-indigo-300"
-          } cursor-pointer transition">
-
-            <input
-              type="checkbox"
-              ${item.done ? "checked" : ""}
-              onchange="toggleGoal('${personKey}', '${category}', ${gIdx})"
-              class="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
-            />
-
-            <span class="text-sm ${
-              item.done
-                ? "line-through text-slate-400"
-                : "text-slate-800"
-            }">
-              ${escapeHtml(item.text)}
-            </span>
-
-          </label>
-
-        `).join("");
-
-
-      return `
-
-        <div class="space-y-2">
-
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">
-            ${title}
-          </h3>
-
-          <div class="space-y-1.5">
-            ${listHtml}
-          </div>
-
         </div>
 
-      `;
-    }
+        <div class="progress mb-2">
+          <div style="width:${score}%"></div>
+        </div>
 
+        <div class="flex justify-between text-xs muted mb-5">
+          <span>${completed} of ${goals.length} completed</span>
+          <span>${goals.length ? "Daily goals" : "No daily goals yet"}</span>
+        </div>
 
-    // ==========================================
-    // OPEN JSON MODAL
-    // ==========================================
+        <div class="space-y-2">
+          ${goals.length ? goals.map((goal,i) => `
+            <label class="goal flex gap-3 items-center cursor-pointer">
+              <input
+                type="checkbox"
+                class="!w-5 !h-5 shrink-0 accent-blue-500"
+                ${goal.done ? "checked" : ""}
+                onchange="toggleGoal('${key}',${i})"
+              >
+              <span class="text-sm ${goal.done ? "line-through muted" : ""}">
+                ${escapeHTML(goal.text)}
+              </span>
+            </label>
+          `).join("") : `
+            <div class="goal text-sm muted text-center py-5">
+              No goals added yet. Use Manage to add some.
+            </div>
+          `}
+        </div>
 
-    function openJsonModal() {
+        <div class="border-t border-slate-700 mt-5 pt-4">
+          <div class="text-xs muted mb-2">Daily punishment</div>
+          <p class="text-sm">${escapeHTML(person.punishments.dailyText || "No punishment set.")}</p>
+          ${score < 60 && goals.length ? `
+            <div class="mt-3 text-xs text-red-300 bg-red-950/40 rounded-lg p-3">
+              Daily score is below 60%. Check the punishment rules.
+            </div>
+          ` : ""}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
 
-      document.getElementById("jsonTextarea").value =
-        JSON.stringify(appData, null, 2);
+function renderComparison() {
+  const p1 = appData.person1;
+  const p2 = appData.person2;
+  const s1 = getScore(p1);
+  const s2 = getScore(p2);
 
-      const modal = document.getElementById("jsonModal");
+  let result = "It's a tie!";
+  if (s1 > s2) result = `${escapeHTML(p1.name)} is ahead today.`;
+  if (s2 > s1) result = `${escapeHTML(p2.name)} is ahead today.`;
 
-      modal.classList.remove("hidden");
-      modal.classList.add("flex");
-    }
+  document.getElementById("comparison").innerHTML = `
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div>
+        <div class="flex justify-between text-sm mb-2">
+          <span>${escapeHTML(p1.name)}</span><strong>${s1}%</strong>
+        </div>
+        <div class="progress"><div style="width:${s1}%"></div></div>
+      </div>
+      <div>
+        <div class="flex justify-between text-sm mb-2">
+          <span>${escapeHTML(p2.name)}</span><strong>${s2}%</strong>
+        </div>
+        <div class="progress"><div style="width:${s2}%"></div></div>
+      </div>
+    </div>
+    <p class="text-center text-sm font-bold text-blue-300">${result}</p>
+  `;
+}
 
+function renderLedger() {
+  const entries = [
+    ...appData.person1.ledger.map((item,index) => ({
+      ...item, person:appData.person1.name, key:"person1", index
+    })),
+    ...appData.person2.ledger.map((item,index) => ({
+      ...item, person:appData.person2.name, key:"person2", index
+    }))
+  ].sort((a,b) => String(b.date || "").localeCompare(String(a.date || "")));
 
-    // ==========================================
-    // CLOSE JSON MODAL
-    // ==========================================
+  document.getElementById("ledgerCount").textContent =
+    `${entries.length} record${entries.length === 1 ? "" : "s"}`;
 
-    function closeJsonModal() {
+  const container = document.getElementById("ledgerContainer");
 
-      const modal = document.getElementById("jsonModal");
+  if (!entries.length) {
+    container.innerHTML = `<div class="text-center muted text-sm py-6">No punishment records yet.</div>`;
+    return;
+  }
 
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
-    }
+  container.innerHTML = entries.map(item => `
+    <div class="goal flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <div class="font-bold text-sm">${escapeHTML(item.person)}</div>
+        <div class="text-xs muted mt-1">
+          ${escapeHTML(item.period || "Penalty")} · ${escapeHTML(item.date || "")}
+        </div>
+        <div class="text-sm mt-2">${escapeHTML(item.text || "Penalty recorded")}</div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs ${item.done ? "text-green-400" : "text-amber-400"}">
+          ${item.done ? "Completed" : "Pending"}
+        </span>
+        <button class="btn ${item.done ? "secondary" : "success"}"
+          onclick="toggleLedger('${item.key}',${item.index})">
+          ${item.done ? "Undo" : "Mark done"}
+        </button>
+      </div>
+    </div>
+  `).join("");
+}
 
+/* =========================================================
+   GOAL COMPLETION
+   ========================================================= */
 
-    // ==========================================
-    // IMPORT JSON DATA
-    // ==========================================
+async function toggleGoal(personKey,index) {
+  const goal = appData[personKey].daily[index];
+  if (!goal) return;
 
-    async function importJsonData() {
+  goal.done = !goal.done;
+  await saveAndRender();
+}
 
-      let parsed;
+async function toggleLedger(personKey,index) {
+  const item = appData[personKey].ledger[index];
+  if (!item) return;
 
-      // First, check whether JSON is valid.
+  item.done = !item.done;
+  await saveAndRender();
+}
 
-      try {
+/* =========================================================
+   MANAGER MODAL
+   ========================================================= */
 
-        parsed = JSON.parse(
-          document.getElementById("jsonTextarea").value
-        );
+function openManager() {
+  document.getElementById("managerModal").classList.remove("hidden");
 
-      } catch (err) {
+  document.getElementById("name1Input").value = appData.person1.name;
+  document.getElementById("name2Input").value = appData.person2.name;
 
-        alert(
-          "Invalid JSON. Check your brackets, commas and quotation marks."
-        );
+  renderGoalManager();
+  loadPunishments();
+}
 
-        return;
+function closeManager() {
+  document.getElementById("managerModal").classList.add("hidden");
+  renderApp();
+}
+
+function switchManagerTab(tab) {
+  ["goals","names","punishments"].forEach(name => {
+    document.getElementById("pane" + name[0].toUpperCase() + name.slice(1))
+      .classList.toggle("hidden", name !== tab);
+
+    document.getElementById("tab" + name[0].toUpperCase() + name.slice(1))
+      .classList.toggle("active", name === tab);
+  });
+
+  if (tab === "goals") renderGoalManager();
+  if (tab === "punishments") loadPunishments();
+}
+
+function renderGoalManager() {
+  const personKey = document.getElementById("goalPerson").value;
+  const period = document.getElementById("goalPeriod").value;
+  const goals = appData[personKey][period] || [];
+
+  const container = document.getElementById("goalManagerList");
+
+  if (!goals.length) {
+    container.innerHTML = `<div class="goal muted text-sm text-center py-5">No ${period} goals yet.</div>`;
+    return;
+  }
+
+  container.innerHTML = goals.map((goal,index) => `
+    <div class="goal flex justify-between items-center gap-3">
+      <div class="text-sm">${escapeHTML(goal.text)}</div>
+      <button class="btn danger" onclick="removeGoal(${index})">Delete</button>
+    </div>
+  `).join("");
+}
+
+async function addGoal() {
+  const personKey = document.getElementById("goalPerson").value;
+  const period = document.getElementById("goalPeriod").value;
+  const input = document.getElementById("newGoal");
+  const text = input.value.trim();
+
+  if (!text) {
+    alert("Write a goal first.");
+    return;
+  }
+
+  appData[personKey][period].push({text,done:false});
+  input.value = "";
+
+  renderGoalManager();
+  await saveAndRender();
+}
+
+async function removeGoal(index) {
+  const personKey = document.getElementById("goalPerson").value;
+  const period = document.getElementById("goalPeriod").value;
+
+  if (!confirm("Delete this goal?")) return;
+
+  appData[personKey][period].splice(index,1);
+  renderGoalManager();
+  await saveAndRender();
+}
+
+async function saveNames() {
+  const name1 = document.getElementById("name1Input").value.trim();
+  const name2 = document.getElementById("name2Input").value.trim();
+
+  if (!name1 || !name2) {
+    alert("Both participants need a name.");
+    return;
+  }
+
+  appData.person1.name = name1;
+  appData.person2.name = name2;
+
+  await saveAndRender();
+  alert("Names updated.");
+}
+
+function loadPunishments() {
+  const key = document.getElementById("punishPerson").value;
+  const punishments = appData[key].punishments;
+
+  document.getElementById("dailyPunishment").value = punishments.dailyText || "";
+  document.getElementById("weeklyPunishment").value = punishments.weeklyText || "";
+  document.getElementById("monthlyPunishment").value = punishments.monthlyText || "";
+}
+
+async function savePunishments() {
+  const key = document.getElementById("punishPerson").value;
+
+  appData[key].punishments = {
+    dailyText:document.getElementById("dailyPunishment").value.trim(),
+    weeklyText:document.getElementById("weeklyPunishment").value.trim(),
+    monthlyText:document.getElementById("monthlyPunishment").value.trim()
+  };
+
+  await saveAndRender();
+  alert("Punishment rules saved.");
+}
+
+/* =========================================================
+   ROLLOVER TEST
+   ========================================================= */
+
+async function testRollover() {
+  if (!confirm("Run a test daily rollover? This will record penalties for scores below 60%, reset daily goals, and move the tracking date forward by one day.")) {
+    return;
+  }
+
+  const oldData = structuredClone(appData);
+
+  try {
+    const next = new Date(appData.activeDate + "T12:00:00");
+    next.setDate(next.getDate() + 1);
+    appData.activeDate = next.toISOString().slice(0,10);
+
+    ["person1","person2"].forEach(key => {
+      const person = appData[key];
+      const score = getScore(person);
+
+      if (score < 60 && person.daily.length) {
+        person.ledger.push({
+          date:oldData.activeDate,
+          period:"Daily",
+          text:person.punishments.dailyText || "Daily goal completion below 60%",
+          done:false
+        });
       }
 
+      person.monthHigh = Math.max(person.monthHigh || 0, score);
+      person.monthWorst = person.monthWorst
+        ? Math.min(person.monthWorst, score)
+        : score;
 
-      // Validate the structure.
+      person.daily.forEach(goal => goal.done = false);
+    });
 
-      const validationError = validateData(parsed);
+    renderApp();
+    await saveToCloud();
+    renderApp();
+    alert("Daily rollover completed and synced.");
 
-      if (validationError) {
+  } catch (error) {
+    appData = oldData;
+    renderApp();
+    alert("Rollover failed. Your previous data has been restored in this browser.\n\n" + error.message);
+  }
+}
 
-        alert("Invalid data format: " + validationError);
+/* =========================================================
+   FACTORY RESET
+   ========================================================= */
 
-        return;
-      }
+async function resetApp() {
+  const firstCheck = confirm(
+    "FACTORY RESET\n\nThis will erase all current DuoTrack data:\n\n" +
+    "• Participant names\n" +
+    "• All daily, weekly and monthly goals\n" +
+    "• All completion records\n" +
+    "• All punishment rules\n" +
+    "• The entire punishment ledger\n\n" +
+    "Both participants will return to Person 1 and Person 2.\n\nContinue?"
+  );
 
+  if (!firstCheck) return;
 
-      // Preserve existing data until validation passes.
+  const secondCheck = confirm(
+    "Are you absolutely sure?\n\nThis reset will also overwrite the cloud data in JSONBin."
+  );
 
-      const previousData = appData;
+  if (!secondCheck) return;
 
-      appData = parsed;
+  const previousData = appData;
+  appData = createDefaultData();
+  renderApp();
 
-      try {
+  try {
+    await saveToCloud();
+    renderApp();
+    alert("DuoTrack has been reset successfully. Person 1 and Person 2 are ready for a fresh start.");
+  } catch (error) {
+    appData = previousData;
+    renderApp();
+    alert("Reset could not be saved to the cloud. Your previous data has been restored in this browser.\n\n" + error.message);
+  }
+}
 
-        await saveState();
+/* =========================================================
+   JSON IMPORT / EXPORT
+   ========================================================= */
 
-        closeJsonModal();
+function openJsonModal() {
+  document.getElementById("jsonModal").classList.remove("hidden");
+  document.getElementById("jsonArea").value = JSON.stringify(appData,null,2);
+}
 
-        alert("Pushed to Cloud successfully!");
+function closeJsonModal() {
+  document.getElementById("jsonModal").classList.add("hidden");
+}
 
-      } catch (err) {
+function exportJson() {
+  const blob = new Blob([JSON.stringify(appData,null,2)], {
+    type:"application/json"
+  });
 
-        appData = previousData;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "duotrack-backup.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-        renderApp();
+async function copyJson() {
+  const text = JSON.stringify(appData,null,2);
 
-        alert(
-          "Cloud upload failed: " + err.message
-        );
+  try {
+    await navigator.clipboard.writeText(text);
+    alert("JSON copied.");
+  } catch {
+    document.getElementById("jsonArea").value = text;
+    document.getElementById("jsonArea").select();
+    alert("Select and copy the JSON manually.");
+  }
+}
 
-      }
-    }
+function loadJsonFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
 
+  const reader = new FileReader();
 
-    // ==========================================
-    // DOWNLOAD JSON FILE
-    // ==========================================
+  reader.onload = () => {
+    document.getElementById("jsonArea").value = reader.result;
+  };
 
-    function downloadJsonFile() {
+  reader.readAsText(file);
+  event.target.value = "";
+}
 
-      if (!appData) {
+async function importJson() {
+  const text = document.getElementById("jsonArea").value;
+  let imported;
 
-        alert("No data available to download.");
+  try {
+    imported = validateData(JSON.parse(text));
+  } catch (error) {
+    alert("Invalid JSON:\n\n" + error.message);
+    return;
+  }
 
-        return;
-      }
+  if (!confirm("Importing this file will replace your current DuoTrack data. Continue?")) {
+    return;
+  }
 
-      const blob = new Blob(
-        [JSON.stringify(appData, null, 2)],
-        { type: "application/json" }
-      );
+  const previousData = appData;
+  appData = imported;
+  renderApp();
 
-      const url = URL.createObjectURL(blob);
+  try {
+    await saveToCloud();
+    renderApp();
+    alert("JSON imported and synced successfully.");
+    closeJsonModal();
+  } catch (error) {
+    appData = previousData;
+    renderApp();
+    alert("Import could not be saved to the cloud. Previous data restored.\n\n" + error.message);
+  }
+}
 
-      const a = document.createElement("a");
+/* =========================================================
+   START
+   ========================================================= */
 
-      a.href = url;
-      a.download = "duotrack-data.json";
-
-      document.body.appendChild(a);
-
-      a.click();
-
-      a.remove();
-
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
-
-
-    // ==========================================
-    // HTML ESCAPING
-    // ==========================================
-
-    function escapeHtml(str) {
-
-      return String(str ?? "")
-
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-
-    // ==========================================
-    // START APPLICATION
-    // ==========================================
-
-    initApp();
-
-  </script>
-
+initApp();
+</script>
 </body>
 </html>
