@@ -1,0 +1,191 @@
+{
+  "activeDate": "2026-11-18",
+  "activeWeek": "2026-W47",
+  "activeMonth": "2026-11",
+  "person1": {
+    "name": "Maggie",
+    "monthHigh": 0,
+    "monthWorst": 0,
+    "daily": [
+      {
+        "text": "Sleeping and waking up 11:30 - 5:30",
+        "done": false
+      },
+      {
+        "text": "work starts 7:00am",
+        "done": false
+      },
+      {
+        "text": "Shop 12pm - 6pm",
+        "done": false
+      },
+      {
+        "text": "Parakin 6 - 7",
+        "done": false
+      },
+      {
+        "text": "Do the 40/20 for about 6 times",
+        "done": false
+      },
+      {
+        "text": "Portion control food and timed eating",
+        "done": false
+      },
+      {
+        "text": "10 minutes praying",
+        "done": false
+      },
+      {
+        "text": "3 pages writing",
+        "done": false
+      },
+      {
+        "text": "Do 2 hours of coding when I wake",
+        "done": false
+      },
+      {
+        "text": "spend less than 2 hours on social media",
+        "done": false
+      }
+    ],
+    "weekly": [
+      {
+        "text": "Fast on Wednesday",
+        "done": false
+      },
+      {
+        "text": "work out 3 times a week",
+        "done": false
+      },
+      {
+        "text": "Go to church all Sunday",
+        "done": false
+      },
+      {
+        "text": "use a verse for Mantra",
+        "done": false
+      }
+    ],
+    "monthly": [
+      {
+        "text": "Read a book on Investment",
+        "done": false
+      },
+      {
+        "text": "Save 40% of earnings",
+        "done": false
+      },
+      {
+        "text": "Discuss an investment or business idea on what I've read",
+        "done": false
+      },
+      {
+        "text": "write a road map for your current business",
+        "done": false
+      }
+    ],
+    "punishments": {
+      "dailyText": "Do 50 pushups",
+      "weeklyText": "Cook dinner for the week",
+      "monthlyText": "Buy groceries for both"
+    },
+    "ledger": [
+      {
+        "id": 1794984313360.1453,
+        "period": "Daily (2026-11-17)",
+        "text": "Do 50 pushups",
+        "score": "0%",
+        "completed": false
+      }
+    ]
+  },
+  "person2": {
+    "name": "Yemi",
+    "monthHigh": 0,
+    "monthWorst": 0,
+    "daily": [
+      {
+        "text": "sleep around 3 am and wake after 6 hours",
+        "done": false
+      },
+      {
+        "text": "no idle time outside 45/15",
+        "done": false
+      },
+      {
+        "text": "work on app for 1 hour",
+        "done": false
+      },
+      {
+        "text": "continue learning blender everyday",
+        "done": false
+      },
+      {
+        "text": "nothing less than 8 hours on portfolio building",
+        "done": false
+      },
+      {
+        "text": "no dirty plates and clothes",
+        "done": false
+      },
+      {
+        "text": "less than one hour on social media",
+        "done": false
+      },
+      {
+        "text": "Progressive skipping rope and plank daily",
+        "done": false
+      }
+    ],
+    "weekly": [
+      {
+        "text": "Work-out 5 or 6 days",
+        "done": false
+      },
+      {
+        "text": "clean workspace at least one week",
+        "done": false
+      },
+      {
+        "text": "Read book on marketing and lightning",
+        "done": false
+      },
+      {
+        "text": "spend at least 2 hours on website building",
+        "done": false
+      }
+    ],
+    "monthly": [
+      {
+        "text": "start sending portfolio",
+        "done": false
+      },
+      {
+        "text": "optimize fiverr",
+        "done": false
+      },
+      {
+        "text": "finish website",
+        "done": false
+      },
+      {
+        "text": "optimized CV",
+        "done": false
+      }
+    ],
+    "punishments": {
+      "dailyText": "Wash all dishes",
+      "weeklyText": "Clean the entire living room",
+      "monthlyText": "Organize weekend trip"
+    },
+    "ledger": [
+      {
+        "id": 1794984313360.3752,
+        "period": "Daily (2026-11-17)",
+        "text": "Wash all dishes",
+        "score": "0%",
+        "completed": false
+      }
+    ]
+  }
+}
